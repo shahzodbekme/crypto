@@ -29,8 +29,7 @@ async function sendPrices() {
 const message = 
       `₿ BTC: $${data.bitcoin.usd} (${data.bitcoin.usd_24h_change.toFixed(2)}%)\n\n` +
       `⟠ ETH: $${data.ethereum.usd} (${data.ethereum.usd_24h_change.toFixed(2)}%)\n\n` +
-      `◎ SOL: $${data.solana.usd} (${data.solana.usd_24h_change.toFixed(2)}%)\n\n` +
-      `⏱ ${new Date().toLocaleTimeString('uz-UZ')}`;
+      `◎ SOL: $${data.solana.usd} (${data.solana.usd_24h_change.toFixed(2)}%)\n\n`;
     
     await bot.sendMessage(CHANNEL, message);
     console.log("Xabar yuborildi!");
