@@ -1,7 +1,7 @@
 {
   "name": "bot",
   "version": "1.0.0",
-  "description": "crypto telegram bot",
+  "description": "crypto",
   "main": "bot.js",
   "scripts": {
     "start": "node bot.js"
