@@ -42,7 +42,7 @@ async function sendPrices() {
 // Bot yonganda darhol yuborsin
 sendPrices();
 // Har 2 daqiqada (120000 ms) takrorlansin (Render bepul tarifida tez-tez so'rov yuborishni cheklashi mumkin)
-setInterval(sendPrices, 120000);
+setInterval(sendPrices, 60000);
 
 // Crash bo'lmasligi uchun xatolarni tutish
 bot.on('polling_error', (error) => console.log('Polling xatosi:', error.code));
