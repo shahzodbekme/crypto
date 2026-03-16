@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 10000;
 app.get('/', (req, res) => res.send('Crypto & Stocks Bot is Active!'));
 app.listen(PORT, '0.0.0.0', () => console.log(`Server started on ${PORT}`));
 
-const TOKEN = "8263789071:AAGDkuduxX0qOfpU9uKIRYJYz_9IEYA6LWg";
+const TOKEN = "8263789071:AAH7mIREsrLcXBJ5kxPL8bQ0LqjhNR_zcPk";
 
 const CHANNELS_CONFIG = [
   { id: "@avtomess", coin: "bitcoin", symbol: "₿ BTC" },
