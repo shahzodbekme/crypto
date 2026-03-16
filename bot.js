@@ -3,60 +3,46 @@ const TelegramBot = require("node-telegram-bot-api");
 const axios = require("axios");
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000; // Render odatda 10000 portni ishlatadi
 
-// Render uchun Web Service qismi
+// Render uchun "tiriklik" yo'lagi
 app.get('/', (req, res) => {
-  res.send('Bot is active and running!');
+  res.status(200).send('Bot is Alive!');
 });
 
+// Serverni ishga tushirish (0.0.0.0 majburiy!)
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Web server port ${PORT} da yondi`);
+  console.log(`Web server is running on port ${PORT}`);
 });
 
-// Bot sozlamalari
 const TOKEN = "8263789071:AAGDkuduxX0qOfpU9uKIRYJYz_9IEYA6LWg";
 const CHANNEL = "@avtomess";
 
-// polling: true - bot doim Telegram bilan aloqada bo'lishi uchun
+// Pollingni yoqamiz
 const bot = new TelegramBot(TOKEN, { polling: true });
 
 async function sendPrices() {
   try {
     const url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd&include_24hr_change=true";
-    const { data } = await axios.get(url, { timeout: 15000 });
+    const { data } = await axios.get(url);
 
-    const btc = data.bitcoin.usd;
-    const eth = data.ethereum.usd;
-    const sol = data.solana.usd;
-
-    const btcChange = data.bitcoin.usd_24h_change.toFixed(2);
-    const ethChange = data.ethereum.usd_24h_change.toFixed(2);
-    const solChange = data.solana.usd_24h_change.toFixed(2);
-
-    const btcIcon = btcChange >= 0 ? "🟢" : "🔴";
-    const ethIcon = ethChange >= 0 ? "🟢" : "🔴";
-    const solIcon = solChange >= 0 ? "🟢" : "🔴";
-
-    const message = `📊 CRYPTO MARKET\n\n₿ BTC: $${btc}\n${btcIcon} 24h: ${btcChange}%\n\n⟠ ETH: $${eth}\n${ethIcon} 24h: ${ethChange}%\n\n◎ SOL: $${sol}\n${solIcon} 24h: ${solChange}%\n\n⏱ ${new Date().toLocaleTimeString('uz-UZ')}`;
+    const message = `📊 CRYPTO MARKET\n\n` +
+      `₿ BTC: $${data.bitcoin.usd} (${data.bitcoin.usd_24h_change.toFixed(2)}%)\n` +
+      `⟠ ETH: $${data.ethereum.usd} (${data.ethereum.usd_24h_change.toFixed(2)}%)\n` +
+      `◎ SOL: $${data.solana.usd} (${data.solana.usd_24h_change.toFixed(2)}%)\n\n` +
+      `⏱ ${new Date().toLocaleTimeString('uz-UZ')}`;
 
     await bot.sendMessage(CHANNEL, message);
-    console.log("Post yuborildi: " + new Date().toLocaleTimeString());
-
+    console.log("Xabar yuborildi!");
   } catch (err) {
-    console.error("Xato yuz berdi:", err.message);
+    console.log("Xato yuz berdi:", err.message);
   }
 }
 
-// Bot yonganda darhol bir marta narxni yuborsin
+// Bot yonganda darhol yuborsin
 sendPrices();
+// Har 2 daqiqada (120000 ms) takrorlansin (Render bepul tarifida tez-tez so'rov yuborishni cheklashi mumkin)
+setInterval(sendPrices, 120000);
 
-// Keyin har 60 soniyada qaytarsin
-setInterval(sendPrices, 60000);
-
-console.log("Crypto bot muvaffaqiyatli ishga tushdi...");
-
-// Bot xatoga uchrab o'chib qolmasligi uchun
-bot.on('polling_error', (error) => {
-  console.log("Polling error:", error.code); 
-});
+// Crash bo'lmasligi uchun xatolarni tutish
+bot.on('polling_error', (error) => console.log('Polling xatosi:', error.code));
