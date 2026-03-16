@@ -26,12 +26,12 @@ async function sendPrices() {
     const url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd&include_24hr_change=true";
     const { data } = await axios.get(url);
 
-    const message = `📊 CRYPTO MARKET\n\n` +
-      `BTC: $${data.bitcoin.usd} (${data.bitcoin.usd_24h_change.toFixed(2)}%)\n` +
-      `ETH: $${data.ethereum.usd} (${data.ethereum.usd_24h_change.toFixed(2)}%)\n` +
-      `SOL: $${data.solana.usd} (${data.solana.usd_24h_change.toFixed(2)}%)\n\n` +
-      `${new Date().toLocaleTimeString('uz-UZ')}`;
-
+const message = 
+      `<i>₿ BTC:</i> <b>$${data.bitcoin.usd}</b> (<i>${data.bitcoin.usd_24h_change.toFixed(2)}%</i>)\n` +
+      `<i>⟠ ETH:</i> <b>$${data.ethereum.usd}</b> (<i>${data.ethereum.usd_24h_change.toFixed(2)}%</i>)\n` +
+      `<i>◎ SOL:</i> <b>$${data.solana.usd}</b> (<i>${data.solana.usd_24h_change.toFixed(2)}%</i>)\n\n` +
+      `<u>⏱ Oxirgi yangilanish: ${new Date().toLocaleTimeString('uz-UZ')}</u>`;
+    
     await bot.sendMessage(CHANNEL, message);
     console.log("Xabar yuborildi!");
   } catch (err) {
