@@ -1,8 +1,8 @@
 {
-  "name": "bot",
+  "name": "crypto-bot",
   "version": "1.0.0",
-  "description": "crypto",
   "main": "bot.js",
+  "type": "commonjs",
   "scripts": {
     "start": "node bot.js"
   },
