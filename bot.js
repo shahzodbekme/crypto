@@ -5,10 +5,11 @@ const axios = require("axios");
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-app.get('/', (req, res) => res.send('Crypto & Stocks Bot is Active!'));
+app.get('/', (req, res) => res.send('1-Min Multi-API Bot is Active!'));
 app.listen(PORT, '0.0.0.0', () => console.log(`Server started on ${PORT}`));
 
 const TOKEN = "8263789071:AAH7mIREsrLcXBJ5kxPL8bQ0LqjhNR_zcPk";
+const bot = new TelegramBot(TOKEN, { polling: true });
 
 const CHANNELS_CONFIG = [
   { id: "@avtomess", coin: "bitcoin", symbol: "₿ BTC" },
@@ -30,7 +31,6 @@ const CHANNELS_CONFIG = [
   { id: "@avtomess", coin: "stellar", symbol: "🚀 XLM" },
   { id: "@avtomess", coin: "monero", symbol: "🔒 XMR" },
   { id: "@avtomess", coin: "ethereum-classic", symbol: "⟠ ETC" },
-  { id: "@avtomess", coin: "okb", symbol: "🟦 OKB" },
 
   // --- AKSIYALAR ---
   { id: "@avtomess", coin: "apple-tokenized-stock-bittrex", symbol: "🍏 APPLE" },
@@ -46,18 +46,8 @@ const CHANNELS_CONFIG = [
   { id: "@avtomess", coin: "oil-tokenized-stock-bittrex", symbol: "🛢 NEFT (Oil)" },
 
   // --- METALLAR ---
-  { id: "@avtomess", coin: "pax-gold", symbol: "🟡 OLTIN (Gold)" },
-  { id: "@avtomess", coin: "tether-silver", symbol: "⚪ KUMUSH (Silver)" },
-
-  // --- AI ---
-  { id: "@avtomess", coin: "fetch-ai", symbol: "🤖 FET (AI)" },
-  { id: "@avtomess", coin: "render-token", symbol: "🎨 RNDR" },
-  { id: "@avtomess", coin: "the-graph", symbol: "📊 GRT" },
-  { id: "@avtomess", coin: "singularitynet", symbol: "🧠 AGIX" },
-  { id: "@avtomess", coin: "ocean-protocol", symbol: "🌊 OCEAN" },
-  { id: "@avtomess", coin: "bittensor", symbol: "🕸️ TAO" },
-  { id: "@avtomess", coin: "akash-network", symbol: "☁️ AKT" },
-  { id: "@avtomess", coin: "worldcoin-wld", symbol: "👁️ WLD" },
+  { id: "@avtomess", coin: "pax-gold", symbol: "🟡 OLTIN" },
+  { id: "@avtomess", coin: "tether-silver", symbol: "⚪ KUMUSH" },
 
   // --- TON & MEMS ---
   { id: "@avtomess", coin: "notcoin", symbol: "🔳 NOT" },
@@ -77,51 +67,61 @@ const CHANNELS_CONFIG = [
   { id: "@avtomess", coin: "arbitrum", symbol: "💙 ARB" },
   { id: "@avtomess", coin: "celestia", symbol: "🌌 TIA" },
   { id: "@avtomess", coin: "sei-network", symbol: "🚢 SEI" },
-  { id: "@avtomess", coin: "injective-protocol", symbol: "💉 INJ" },
-  { id: "@avtomess", coin: "fantom", symbol: "👻 FTM" },
   { id: "@avtomess", coin: "cosmos", symbol: "⚛️ ATOM" },
-  { id: "@avtomess", coin: "kaspa", symbol: "💎 KAS" }
 ];
 
-const bot = new TelegramBot(TOKEN, { polling: true });
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function sendPrices() {
   try {
-    // 20 tadan bo'laklab so'rash (Chunking)
     const chunkSize = 20;
     for (let i = 0; i < CHANNELS_CONFIG.length; i += chunkSize) {
       const chunk = CHANNELS_CONFIG.slice(i, i + chunkSize);
-      const coinIds = [...new Set(chunk.map(c => c.coin))].join(',');
-      const url = `https://api.coingecko.com/api/v3/simple/price?ids=${coinIds}&vs_currencies=usd&include_24hr_change=true`;
+      const coinIds = chunk.map(c => c.coin).join(',');
       
+      let data = {};
       try {
-        const { data } = await axios.get(url, { timeout: 15000 });
-        const getIcon = (change) => (change >= 0 ? "📈 +" : "📉 ");
-
-        for (const item of chunk) {
-          const coinData = data[item.coin];
-          if (!coinData || coinData.usd === undefined) continue;
-
-          const change = coinData.usd_24h_change ? coinData.usd_24h_change.toFixed(2) : "0.00";
-          const text = `${item.symbol}: $${coinData.usd} (${getIcon(coinData.usd_24h_change)}${change}%)`;
-
-          try {
-            await bot.sendMessage(item.id, text);
-          } catch (e) {
-            console.error(`Xato: ${item.id}`);
-          }
-          await sleep(800); // Telegram spamga tushmasligi uchun
-        }
-      } catch (apiErr) {
-        console.error("API xatosi:", apiErr.message);
+        // 1-urinish: CoinGecko
+        const response = await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${coinIds}&vs_currencies=usd&include_24hr_change=true`, { timeout: 10000 });
+        data = response.data;
+      } catch (e) {
+        console.log("⚠️ CoinGecko band, CoinCap-dan olinmoqda...");
       }
-      await sleep(2000); // Bo'laklar orasida 2s kutish
+
+      for (const item of chunk) {
+        try {
+          let price, change;
+          
+          if (data[item.coin]) {
+            price = data[item.coin].usd;
+            change = data[item.coin].usd_24h_change;
+          } else {
+            // 2-urinish: Zaxira API (CoinCap) har bir koin uchun
+            let ccId = item.coin === "the-open-network" ? "ton" : item.coin;
+            const res = await axios.get(`https://api.coincap.io/v2/assets/${ccId}`, { timeout: 5000 }).catch(() => null);
+            if (res && res.data.data) {
+              price = parseFloat(res.data.data.priceUsd).toFixed(2);
+              change = parseFloat(res.data.data.changePercent24Hr);
+            }
+          }
+
+          if (price !== undefined) {
+            const icon = change >= 0 ? "📈 +" : "📉 ";
+            const text = `${item.symbol}: $${price} (${icon}${parseFloat(change).toFixed(2)}%)`;
+            await bot.sendMessage(item.id, text).catch(() => null);
+          }
+          await sleep(500); // 1 minutga sig'ish uchun tezlashtirildi
+        } catch (itemErr) {
+          continue;
+        }
+      }
+      await sleep(1000); 
     }
   } catch (err) {
-    console.error("Global xato:", err.message);
+    console.error("Xato:", err.message);
   }
 }
 
-setInterval(sendPrices, 90000); // 1.5 minutda bir marta (63 ta uchun ideal)
+// 1 daqiqada bir marta yangilash
+setInterval(sendPrices, 60000);
 sendPrices();
