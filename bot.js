@@ -55,4 +55,6 @@ ${solIcon} 24h: ${solChange}%
 
 setInterval(sendPrices,60000);
 
+sendPrices();
+
 console.log("Crypto bot ishga tushdi");
