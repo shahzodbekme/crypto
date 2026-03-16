@@ -4,7 +4,7 @@ const axios = require("axios");
 const TOKEN = "8263789071:AAGDkuduxX0qOfpU9uKIRYJYz_9IEYA6LWg";
 const CHANNEL = "@avtomess";
 
-const bot = new TelegramBot(TOKEN);
+const bot = new TelegramBot(TOKEN, { polling: true });
 
 async function sendPrices(){
 
