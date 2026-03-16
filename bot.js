@@ -27,9 +27,9 @@ async function sendPrices() {
     const { data } = await axios.get(url);
 
     const message = `📊 CRYPTO MARKET\n\n` +
-      `₿ BTC: $${data.bitcoin.usd} (${data.bitcoin.usd_24h_change.toFixed(2)}%)\n` +
-      `⟠ ETH: $${data.ethereum.usd} (${data.ethereum.usd_24h_change.toFixed(2)}%)\n` +
-      `◎ SOL: $${data.solana.usd} (${data.solana.usd_24h_change.toFixed(2)}%)\n\n` +
+      `🪙 BTC: $${data.bitcoin.usd} (${data.bitcoin.usd_24h_change.toFixed(2)}%)\n` +
+      `💵 ETH: $${data.ethereum.usd} (${data.ethereum.usd_24h_change.toFixed(2)}%)\n` +
+      `🪙 SOL: $${data.solana.usd} (${data.solana.usd_24h_change.toFixed(2)}%)\n\n` +
       `⏱ ${new Date().toLocaleTimeString('uz-UZ')}`;
 
     await bot.sendMessage(CHANNEL, message);
