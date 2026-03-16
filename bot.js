@@ -1,3 +1,20 @@
+const express = require('express');
+const app = express();
+
+// Render portni avtomatik beradi, bo'lmasa 3000 ni oladi
+const PORT = process.env.PORT || 3000;
+
+app.get('/', (req, res) => {
+  res.send('Bot ishlayapti...');
+});
+
+app.listen(PORT, () => {
+  console.log(`Server port ${PORT} da yondi`);
+});
+
+// --- SIZNING BOT KODINGIZ SHU YERDAN DAVOM ETADI ---
+// Masalan: bot.launch() yoki bot.startPolling()
+
 const TelegramBot = require("node-telegram-bot-api");
 const axios = require("axios");
 
