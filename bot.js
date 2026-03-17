@@ -1,6 +1,13 @@
-const { Bot } = require("grammy");
+const { Bot, GrammyError, HttpError } = require("grammy");
 const axios = require("axios");
+const http = require("http"); // Port uchun kerak
 require("dotenv").config();
+
+// 1. Render o'chib qolmasligi uchun soxta server yaratamiz
+http.createServer((req, res) => {
+    res.write("Bot is running!");
+    res.end();
+}).listen(process.env.PORT || 3000);
 
 const bot = new Bot(process.env.BOT_TOKEN);
 
@@ -10,7 +17,7 @@ bot.on("message:text", async (ctx) => {
     const url = ctx.message.text;
     if (!url.includes("http")) return;
 
-    await ctx.reply("⏳ Video qayta ishlanmoqda...");
+    const waitMsg = await ctx.reply("⏳ Video qayta ishlanmoqda...");
 
     try {
         const response = await axios.post("https://api.cobalt.tools/api/json", {
@@ -19,7 +26,8 @@ bot.on("message:text", async (ctx) => {
         }, {
             headers: {
                 "Accept": "application/json",
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "Referer": "https://cobalt.tools/"
             }
         });
 
@@ -30,8 +38,16 @@ bot.on("message:text", async (ctx) => {
         }
     } catch (error) {
         console.error("Xato:", error.message);
-        ctx.reply("❌ Kechirasiz, bu videoni yuklab bo'lmadi. Linkni tekshiring yoki keyinroq urinib ko'ring.");
+        ctx.reply("❌ Xatolik: Videoni yuklab bo'lmadi. Linkni tekshiring.");
+    } finally {
+        // "Yuklanmoqda" xabarini o'chirish
+        await ctx.api.deleteMessage(ctx.chat.id, waitMsg.message_id).catch(() => {});
     }
+});
+
+// Xatoliklarni ushlash
+bot.catch((err) => {
+    console.error("Botda xato:", err.message);
 });
 
 bot.start({
