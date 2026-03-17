@@ -1,122 +1,81 @@
-const express = require('express');
-const TelegramBot = require("node-telegram-bot-api");
+const { Bot, InputFile, HttpError, GrammyError } = require("grammy");
 const axios = require("axios");
+require("dotenv").config();
 
-const app = express();
-const PORT = process.env.PORT || 10000;
+// Bot sozlamalari
+const bot = new Bot(process.env.BOT_TOKEN);
+const ADMIN_ID = 123456789; // O'zingizning Telegram ID'ingizni yozing
+let userCount = new Set(); // Oddiy statistika uchun (Bazaga ulasangiz yaxshi bo'ladi)
 
-app.get('/', (req, res) => res.send('1-Min Multi-API Bot is Active!'));
-app.listen(PORT, '0.0.0.0', () => console.log(`Server started on ${PORT}`));
+// 1. Linkni aniqlash (Regex)
+const linkRegex = /https?:\/\/(www\.)?(instagram\.com|tiktok\.com|youtube\.com|youtu\.be|twitter\.com)\/.+/;
 
-const TOKEN = "8263789071:AAH7mIREsrLcXBJ5kxPL8bQ0LqjhNR_zcPk";
-const bot = new TelegramBot(TOKEN, { polling: true });
+// 2. Admin Panel buyruqlari
+bot.command("admin", async (ctx) => {
+    if (ctx.from.id !== ADMIN_ID) return;
+    await ctx.reply(`📊 **Bot statistikasi:**\n\n👤 Foydalanuvchilar: ${userCount.size}\n⚡️ Server: Render Free`);
+});
 
-const CHANNELS_CONFIG = [
-  { id: "@avtomess", coin: "bitcoin", symbol: "₿ BTC" },
-  { id: "@ethereum_ethprice", coin: "ethereum", symbol: "⟠ ETH" },
-  { id: "@solana_sol_pricee", coin: "solana", symbol: "◎ SOL" },
-  { id: "@ton_price_toncoin", coin: "the-open-network", symbol: "💎 TON" },
-  { id: "@bnb_pricee", coin: "binancecoin", symbol: "🔶 BNB" },
-  { id: "@xrp_ripple_price", coin: "ripple", symbol: "✖️ XRP" },
-  { id: "@ada_pricee", coin: "cardano", symbol: "₳ ADA" },
-  { id: "@doge_pricee", coin: "dogecoin", symbol: "🐕 DOGE" },
-  { id: "@trx_price_tron", coin: "tron", symbol: "💎 TRX" },
-  { id: "@avax_pricee", coin: "avalanche-2", symbol: "🔺 AVAX" },
-  { id: "@dot_pricee", coin: "polkadot", symbol: "🔘 DOT" },
-  { id: "@link_pricee", coin: "chainlink", symbol: "🔗 LINK" },
-  { id: "@near_pricee", coin: "near", symbol: "Ⓝ NEAR" },
-  { id: "@matic_prices", coin: "matic-network", symbol: "🟣 MATIC" },
-  { id: "@litecoin_ltc_price", coin: "litecoin", symbol: "Ł LTC" },
-  { id: "@uniuniswap", coin: "uniswap", symbol: "🦄 UNI" },
+bot.command("start", async (ctx) => {
+    userCount.add(ctx.from.id);
+    await ctx.reply("🤖 **Universal Video Downloader**\n\nInstagram, TikTok va YouTube linkini yuboring!");
+});
 
-  // --- AKSIYALAR ---
-  { id: "@avtomess", coin: "apple-tokenized-stock-bittrex", symbol: "🍏 APPLE" },
-  { id: "@avtomess", coin: "tesla-tokenized-stock-bittrex", symbol: "⚡ TESLA" },
-  { id: "@avtomess", coin: "nvidia-tokenized-stock-bittrex", symbol: "🎮 NVIDIA" },
-  { id: "@avtomess", coin: "amazon-tokenized-stock-bittrex", symbol: "📦 AMAZON" },
-  { id: "@avtomess", coin: "microsoft-tokenized-stock-bittrex", symbol: "💻 MSFT" },
-  { id: "@avtomess", coin: "google-tokenized-stock-bittrex", symbol: "🔍 GOOGLE" },
-  { id: "@avtomess", coin: "meta-platforms-tokenized-stock-bittrex", symbol: "♾️ META" },
-  { id: "@avtomess", coin: "netflix-tokenized-stock-bittrex", symbol: "🎬 NETFLIX" },
-  { id: "@avtomess", coin: "alibaba-tokenized-stock-bittrex", symbol: "🏮 ALIBABA" },
-  { id: "@avtomess", coin: "coinbase-global-tokenized-stock-bittrex", symbol: "🏦 COINBASE" },
-  { id: "@avtomess", coin: "oil-tokenized-stock-bittrex", symbol: "🛢 NEFT (Oil)" },
+// 3. Asosiy Video Yuklash Mantiqi
+bot.on("message:text", async (ctx) => {
+    const url = ctx.message.text;
+    if (!linkRegex.test(url)) return;
 
-  // --- METALLAR ---
-  { id: "@avtomess", coin: "pax-gold", symbol: "🟡 OLTIN" },
-  { id: "@avtomess", coin: "tether-silver", symbol: "⚪ KUMUSH" },
+    userCount.add(ctx.from.id);
+    const statusMsg = await ctx.reply("⏳ *Navbatga qo'shildi, yuklanmoqda...*", { parse_mode: "Markdown" });
 
-  // --- TON & MEMS ---
-  { id: "@avtomess", coin: "notcoin", symbol: "🔳 NOT" },
-  { id: "@avtomess", coin: "hamster-kombat", symbol: "🐹 HMSTR" },
-  { id: "@avtomess", coin: "dogs", symbol: "🦴 DOGS" },
-  { id: "@avtomess", coin: "pepe", symbol: "🐸 PEPE" },
-  { id: "@avtomess", coin: "shiba-inu", symbol: "🐕 SHIB" },
-  { id: "@avtomess", coin: "bonk", symbol: "🦴 BONK" },
-  { id: "@avtomess", coin: "floki", symbol: "⚔️ FLOKI" },
-  { id: "@avtomess", coin: "dogwifhat", symbol: "👒 WIF" },
-  { id: "@avtomess", coin: "catizen", symbol: "🐈 CATI" },
+    try {
+        // Cobalt API orqali so'rov yuborish (Xotirani qiynamaydi)
+        const response = await axios.post("https://api.cobalt.tools/api/json", {
+            url: url,
+            videoQuality: "720",
+            filenameStyle: "basic"
+        }, {
+            headers: { "Accept": "application/json", "Content-Type": "application/json" },
+            timeout: 20000 // 20 soniya kutish
+        });
 
-  // --- L1 & L2 ---
-  { id: "@avtomess", coin: "aptos", symbol: "🪐 APT" },
-  { id: "@avtomess", coin: "sui", symbol: "💧 SUI" },
-  { id: "@avtomess", coin: "optimism", symbol: "🔴 OP" },
-  { id: "@avtomess", coin: "sei-network", symbol: "🚢 SEI" },
-  { id: "@avtomess", coin: "cosmos", symbol: "⚛️ ATOM" },
-];
+        const downloadUrl = response.data.url;
 
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-async function sendPrices() {
-  try {
-    const chunkSize = 46;
-    for (let i = 0; i < CHANNELS_CONFIG.length; i += chunkSize) {
-      const chunk = CHANNELS_CONFIG.slice(i, i + chunkSize);
-      const coinIds = chunk.map(c => c.coin).join(',');
-      
-      let data = {};
-      try {
-        // 1-urinish: CoinGecko
-        const response = await axios.get(`https://api.coingecko.com/api/v3/simple/price?ids=${coinIds}&vs_currencies=usd&include_24hr_change=true`, { timeout: 10000 });
-        data = response.data;
-      } catch (e) {
-        console.log("⚠️ CoinGecko band, CoinCap-dan olinmoqda...");
-      }
-
-      for (const item of chunk) {
-        try {
-          let price, change;
-          
-          if (data[item.coin]) {
-            price = data[item.coin].usd;
-            change = data[item.coin].usd_24h_change;
-          } else {
-            // 2-urinish: Zaxira API (CoinCap) har bir koin uchun
-            let ccId = item.coin === "the-open-network" ? "ton" : item.coin;
-            const res = await axios.get(`https://api.coincap.io/v2/assets/${ccId}`, { timeout: 5000 }).catch(() => null);
-            if (res && res.data.data) {
-              price = parseFloat(res.data.data.priceUsd).toFixed(2);
-              change = parseFloat(res.data.data.changePercent24Hr);
-            }
-          }
-
-          if (price !== undefined) {
-            const icon = change >= 0 ? "📈 +" : "📉 ";
-            const text = `${item.symbol}: $${price} (${icon}${parseFloat(change).toFixed(2)}%)`;
-            await bot.sendMessage(item.id, text).catch(() => null);
-          }
-          await sleep(900); // 1 minutga sig'ish uchun tezlashtirildi
-        } catch (itemErr) {
-          continue;
+        if (downloadUrl) {
+            // Videoni oqim (stream) ko'rinishida yuborish
+            await ctx.replyWithVideo(new InputFile({ url: downloadUrl }), {
+                caption: "✅ @sizning_kanalingiz orqali yuklandi",
+                supports_streaming: true
+            });
+            await ctx.api.deleteMessage(ctx.chat.id, statusMsg.message_id);
+        } else {
+            throw new Error("Link topilmadi");
         }
-      }
-      await sleep(1000); 
-    }
-  } catch (err) {
-    console.error("Xato:", err.message);
-  }
-}
 
-// 1 daqiqada bir marta yangilash
-setInterval(sendPrices, 120000);
-sendPrices();
+    } catch (error) {
+        console.error("Xatolik:", error.message);
+        await ctx.api.editMessageText(
+            ctx.chat.id, 
+            statusMsg.message_id, 
+            "❌ **Xatolik yuz berdi!**\n\n- Video juda katta bo'lishi mumkin.\n- Link shaxsiy (private) akkauntdan olingan.\n- Serverda yuklama ko'p."
+        );
+    }
+});
+
+// Xatoliklarni ushlash (Bot o'chib qolmasligi uchun)
+bot.catch((err) => {
+    const ctx = err.ctx;
+    console.error(`Error while handling update ${ctx.update.update_id}:`);
+    const e = err.error;
+    if (e instanceof GrammyError) {
+        console.error("Error in request:", e.description);
+    } else if (e instanceof HttpError) {
+        console.error("Could not contact Telegram:", e);
+    } else {
+        console.error("Unknown error:", e);
+    }
+});
+
+bot.start();
+console.log("🚀 Bot muvaffaqiyatli ishga tushdi!");
