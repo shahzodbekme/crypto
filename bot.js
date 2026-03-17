@@ -22,15 +22,12 @@ const CHANNELS_CONFIG = [
   { id: "@doge_pricee", coin: "dogecoin", symbol: "🐕 DOGE" },
   { id: "@trx_price_tron", coin: "tron", symbol: "💎 TRX" },
   { id: "@avax_pricee", coin: "avalanche-2", symbol: "🔺 AVAX" },
-  { id: "@avtomess", coin: "polkadot", symbol: "🔘 DOT" },
-  { id: "@avtomess", coin: "chainlink", symbol: "🔗 LINK" },
-  { id: "@avtomess", coin: "near", symbol: "Ⓝ NEAR" },
-  { id: "@avtomess", coin: "matic-network", symbol: "🟣 MATIC" },
-  { id: "@avtomess", coin: "litecoin", symbol: "Ł LTC" },
-  { id: "@avtomess", coin: "uniswap", symbol: "🦄 UNI" },
-  { id: "@avtomess", coin: "stellar", symbol: "🚀 XLM" },
-  { id: "@avtomess", coin: "monero", symbol: "🔒 XMR" },
-  { id: "@avtomess", coin: "ethereum-classic", symbol: "⟠ ETC" },
+  { id: "@dot_pricee", coin: "polkadot", symbol: "🔘 DOT" },
+  { id: "@link_pricee", coin: "chainlink", symbol: "🔗 LINK" },
+  { id: "@near_pricee", coin: "near", symbol: "Ⓝ NEAR" },
+  { id: "@matic_prices", coin: "matic-network", symbol: "🟣 MATIC" },
+  { id: "@litecoin_ltc_price", coin: "litecoin", symbol: "Ł LTC" },
+  { id: "@uniuniswap", coin: "uniswap", symbol: "🦄 UNI" },
 
   // --- AKSIYALAR ---
   { id: "@avtomess", coin: "apple-tokenized-stock-bittrex", symbol: "🍏 APPLE" },
@@ -121,5 +118,5 @@ async function sendPrices() {
 }
 
 // 1 daqiqada bir marta yangilash
-setInterval(sendPrices, 60000);
+setInterval(sendPrices, 120000);
 sendPrices();
