@@ -17,7 +17,7 @@ const CHANNELS_CONFIG = [
   { id: "@solana_sol_price", coin: "solana", symbol: "◎ SOL" },
   { id: "@ton_price_toncoin", coin: "the-open-network", symbol: "💎 TON" },
   { id: "@bnb_pricee", coin: "binancecoin", symbol: "🔶 BNB" },
-  { id: "@xrp_ripple_price", coin: "ripple", symbol: "✖️ XRP" },
+  { id: "@xrp_ripple_pricee", coin: "ripple", symbol: "✖️ XRP" },
   { id: "@ada_pricee", coin: "cardano", symbol: "₳ ADA" },
   { id: "@doge_pricee", coin: "dogecoin", symbol: "🐕 DOGE" },
   { id: "@trx_price_tron", coin: "tron", symbol: "💎 TRX" },
