@@ -4,7 +4,7 @@ require("dotenv").config();
 
 // Bot sozlamalari
 const bot = new Bot(process.env.BOT_TOKEN);
-const ADMIN_ID = 123456789; // O'zingizning Telegram ID'ingizni yozing
+const ADMIN_ID = 6230877154; // O'zingizning Telegram ID'ingizni yozing
 let userCount = new Set(); // Oddiy statistika uchun (Bazaga ulasangiz yaxshi bo'ladi)
 
 // 1. Linkni aniqlash (Regex)
