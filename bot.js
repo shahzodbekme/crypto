@@ -64,8 +64,6 @@ const CHANNELS_CONFIG = [
   { id: "@avtomess", coin: "aptos", symbol: "🪐 APT" },
   { id: "@avtomess", coin: "sui", symbol: "💧 SUI" },
   { id: "@avtomess", coin: "optimism", symbol: "🔴 OP" },
-  { id: "@avtomess", coin: "arbitrum", symbol: "💙 ARB" },
-  { id: "@avtomess", coin: "celestia", symbol: "🌌 TIA" },
   { id: "@avtomess", coin: "sei-network", symbol: "🚢 SEI" },
   { id: "@avtomess", coin: "cosmos", symbol: "⚛️ ATOM" },
 ];
@@ -74,7 +72,7 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function sendPrices() {
   try {
-    const chunkSize = 20;
+    const chunkSize = 46;
     for (let i = 0; i < CHANNELS_CONFIG.length; i += chunkSize) {
       const chunk = CHANNELS_CONFIG.slice(i, i + chunkSize);
       const coinIds = chunk.map(c => c.coin).join(',');
@@ -110,7 +108,7 @@ async function sendPrices() {
             const text = `${item.symbol}: $${price} (${icon}${parseFloat(change).toFixed(2)}%)`;
             await bot.sendMessage(item.id, text).catch(() => null);
           }
-          await sleep(500); // 1 minutga sig'ish uchun tezlashtirildi
+          await sleep(900); // 1 minutga sig'ish uchun tezlashtirildi
         } catch (itemErr) {
           continue;
         }
