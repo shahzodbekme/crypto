@@ -21,16 +21,17 @@ bot.on("message:text", async (ctx) => {
 
     try {
         // Cobalt API ga so'rov
-        const response = await axios.post("https://api.cobalt.tools/api/json", {
-            url: url,
-            videoQuality: "720",
-            downloadMode: "video" // Aniq video rejimini ko'rsatish
-        }, {
-            headers: {
-                "Accept": "application/json",
-                "Content-Type": "application/json"
-            }
-        });
+     const response = await axios.post("https://api.cobalt.tools/api/json", {
+    url: url,
+    videoQuality: "720",
+    downloadMode: "video"
+}, {
+    headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"
+    }
+});
 
         if (response.data && response.data.url) {
             // Videoni yuborish
