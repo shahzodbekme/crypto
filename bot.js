@@ -30,16 +30,21 @@ bot.on("message:text", async (ctx) => {
     try {
         console.log(`Cobalt'ga so'rov yuborilyapti: ${url}`);
         
-        const response = await axios.post("https://api.cobalt.tools/api/json", {
-            url: url,
-            videoQuality: "720"
-        }, {
-            headers: {
-                "Accept": "application/json",
-                "Content-Type": "application/json",
-                "User-Agent": "Mozilla/5.0"
-            }
-        });
+       const response = await axios.post("https://api.cobalt.tools/api/json", {
+    url: url,                // Foydalanuvchi yuborgan link
+    videoQuality: "720",      // Sifat
+    downloadMode: "video",   // Faqat video (audio emas)
+    saveAudioOnly: false,    // Audio emasligini tasdiqlash
+    filenameStyle: "basic"   // Fayl nomi formati
+}, {
+    headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36",
+        "Origin": "https://cobalt.tools",
+        "Referer": "https://cobalt.tools/"
+    }
+});
 
         console.log("Cobalt Javobi:", response.data);
 
