@@ -1,96 +1,119 @@
 const { Bot, InlineKeyboard } = require("grammy");
 const cron = require("node-cron");
 const http = require("http");
+const fs = require("fs");
 require("dotenv").config();
 
-// Render uchun server (o'chib qolmasligi uchun)
+// 1. RENDER UCHUN SERVER (Cron-job orqali botni uyg'oq saqlash uchun)
 http.createServer((req, res) => {
-    res.writeHead(200);
-    res.end("Birthday Bot is running!");
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end("Birthday Bot is Active!\n");
 }).listen(process.env.PORT || 3000);
 
+// 2. BOTNI SOZLASH
 const bot = new Bot(process.env.BOT_TOKEN);
+const DATA_FILE = "users_data.json";
 
-// Foydalanuvchilar ma'lumotlarini saqlash (Vaqtinchalik, server o'chsa o'chadi)
-// Aslida bazaga (MongoDB/PostgreSQL) ulash yaxshi, lekin hozircha shunday:
-const users = {}; 
+// Ma'lumotlarni yuklash (Server o'chib yonsa ham saqlanib qolishi uchun)
+let users = {};
+if (fs.existsSync(DATA_FILE)) {
+    try {
+        users = JSON.parse(fs.readFileSync(DATA_FILE));
+    } catch (e) {
+        console.log("Faylni o'qishda xato, yangi ro'yxat tuziladi.");
+        users = {};
+    }
+}
 
-// Menyu tugmalari
+// Ma'lumotlarni saqlash funksiyasi
+function saveUsers() {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(users, null, 2));
+}
+
+// 3. ASOSIY MENYU
 const mainMenu = new InlineKeyboard()
-    .text("📅 Sana kiritish", "set_birthday").row()
+    .text("📅 Sana kiritish", "set_birthday")
     .text("📊 Holatni ko'rish", "check_status");
 
 bot.command("start", (ctx) => {
-    ctx.reply("Assalomu alaykum! Men tug'ilgan kuningizgacha qancha vaqt qolganini hisoblab beraman va har kuni eslatib turaman.\n\nPastdagi tugmani bosing:", {
+    ctx.reply(`Salom ${ctx.from.first_name}! 👋\nMen tug'ilgan kuningizgacha qolgan vaqtni hisoblab boraman va har kuni 09:00 da eslatma yuboraman.`, {
         reply_markup: mainMenu
     });
 });
 
-// Tugmani bosganda javob berish
+// 4. TUGMALARGA JAVOB
 bot.callbackQuery("set_birthday", (ctx) => {
-    ctx.reply("Tug'ilgan kuningizni quyidagi formatda yuboring:\n\n**KK.OO.YYYY**\nMasalan: `15.05.1995`", { parse_mode: "Markdown" });
+    ctx.reply("Tug'ilgan kuningizni mana bu formatda yozing:\n\n**KK.OO.YYYY**\n(Masalan: `25.12.2000`)", { parse_mode: "Markdown" });
 });
 
 bot.callbackQuery("check_status", (ctx) => {
     const userId = ctx.from.id;
     if (!users[userId]) {
-        return ctx.reply("Siz hali sanani kiritmagansiz.");
+        return ctx.reply("Siz hali tug'ilgan kuningizni kiritmagansiz. 📅");
     }
     const info = calculateRemaining(users[userId].date);
-    ctx.reply(`Sizning tug'ilgan kuningiz: ${users[userId].date}\n\nQoldi: ${info.days} kun, ${info.months} oy va ${info.years} yil.`);
+    ctx.reply(`📅 Sizning sanangiz: ${users[userId].date}\n⏳ Tug'ilgan kuningizga **${info.days} kun** qoldi!`, { parse_mode: "Markdown" });
 });
 
-// Sanani qabul qilish
+// 5. SANANI QABUL QILISH VA TEKSHIRISH
 bot.on("message:text", (ctx) => {
     const text = ctx.message.text;
-    const regex = /^\d{2}\.\d{2}\.\d{4}$/; // KK.OO.YYYY formatini tekshirish
+    const dateRegex = /^\d{2}\.\d{2}\.\d{4}$/; // Format: 00.00.0000
 
-    if (regex.test(text)) {
+    if (dateRegex.test(text)) {
         users[ctx.from.id] = {
             chatId: ctx.chat.id,
+            name: ctx.from.first_name,
             date: text
         };
-        ctx.reply(`Rahmat! Sanangiz saqlandi: ${text}\nMen har kuni ertalab sizga eslatma yuboraman. ✅`);
-    } else if (text.includes("http")) {
-        ctx.reply("Kechirasiz, hozircha video yuklash funksiyasi to'xtatilgan.");
+        saveUsers(); // Faylga yozish
+        ctx.reply(`✅ Rahmat! ${text} sanasi saqlandi.\nEndi har kuni soat 09:00 da eslatma yuboraman.`);
+    } else {
+        ctx.reply("Iltimos, sanani to'g'ri formatda yuboring: **KK.OO.YYYY**", { parse_mode: "Markdown" });
     }
 });
 
-// Vaqtni hisoblash funksiyasi
+// 6. VAQTNI HISOBLASH FUNKSIYASI
 function calculateRemaining(birthdayStr) {
-    const [day, month, year] = birthdayStr.split('.').map(Number);
+    const [d, m, y] = birthdayStr.split('.').map(Number);
     const now = new Date();
-    let nextBirthday = new Date(now.getFullYear(), month - 1, day);
-
-    if (nextBirthday < now) {
-        nextBirthday.setFullYear(now.getFullYear() + 1);
+    
+    // Toshkent vaqti bilan solishtirish (UTC+5)
+    let nextBday = new Date(now.getFullYear(), m - 1, d);
+    
+    // Agar bu yilgi tug'ilgan kun o'tib ketgan bo'lsa, kelasi yilnikini olamiz
+    if (nextBday < now) {
+        nextBday.setFullYear(now.getFullYear() + 1);
     }
 
-    const diff = nextBirthday - now;
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    
-    // Oddiy kunlarni hisoblash
-    return {
-        days: days,
-        months: Math.floor(days / 30), // Taxminiy
-        years: now.getFullYear() - year
-    };
+    const diff = nextBday - now;
+    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+    return { days };
 }
 
-// HAR KUNI ERTALAB SOAT 09:00 DA HABAR YUBORISH (Cron Job)
+// 7. HAR KUNI SOAT 09:00 DA AVTOMATIK XABAR (Cron Job)
 cron.schedule("0 9 * * *", () => {
-    console.log("Eslatmalar yuborilmoqda...");
+    console.log("Eslatmalar yuborish boshlandi...");
+    
     for (const userId in users) {
         const user = users[userId];
         const info = calculateRemaining(user.date);
         
-        let message = `🎉 Tug'ilgan kuningizga ${info.days} kun qoldi!`;
-        if (info.days === 0) message = "🥳 BUGUN SIZNING TUG'ILGAN KUNINGIZ! Tabriklaymiz! 🎂";
+        let message = `🔔 Eslatma: Tug'ilgan kuningizga **${info.days} kun** qoldi!`;
         
-        bot.api.sendMessage(user.chatId, message).catch(err => console.error(err));
+        // Agar aynan bugun bo'lsa
+        if (info.days === 0 || info.days === 366) {
+            message = `🥳 BUGUN SIZNING TUG'ILGAN KUNINGIZ! \n\n${user.name}, tabriklaymiz! Umringiz uzoq bo'lsin! 🎂🎉`;
+        }
+
+        bot.api.sendMessage(user.chatId, message, { parse_mode: "Markdown" })
+            .catch(err => console.error(`Xabar ketmadi (${user.name}):`, err.message));
     }
 }, {
     timezone: "Asia/Tashkent"
 });
 
-bot.start();
+// 8. BOTNI ISHGA TUSHIRISH
+bot.start({
+    onStart: () => console.log("🚀 Tug'ilgan kun boti muvaffaqiyatli ishga tushdi!")
+});
