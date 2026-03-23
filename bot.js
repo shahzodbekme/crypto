@@ -1,4 +1,86 @@
-for (const item of chunk) {
+const express = require('express');
+const TelegramBot = require("node-telegram-bot-api");
+const axios = require("axios");
+
+const app = express();
+const PORT = process.env.PORT || 10000;
+
+app.get('/', (req, res) => res.send('1-Min Multi-API Bot is Active!'));
+app.listen(PORT, '0.0.0.0', () => console.log(Server started on ${PORT}));
+
+const TOKEN = "8263789071:AAH7mIREsrLcXBJ5kxPL8bQ0LqjhNR_zcPk";
+const bot = new TelegramBot(TOKEN, { polling: true });
+
+const CHANNELS_CONFIG = [
+  { id: "@avtomess", coin: "bitcoin", symbol: "₿ BTC" },
+  { id: "@ethereum_ethprice", coin: "ethereum", symbol: "⟠ ETH" },
+  { id: "@solana_sol_pricee", coin: "solana", symbol: "◎ SOL" },
+  { id: "@ton_price_toncoin", coin: "the-open-network", symbol: "💎 TON" },
+  { id: "@bnb_pricee", coin: "binancecoin", symbol: "🔶 BNB" },
+  { id: "@xrp_ripple_price", coin: "ripple", symbol: "✖️ XRP" },
+  { id: "@ada_pricee", coin: "cardano", symbol: "₳ ADA" },
+  { id: "@doge_pricee", coin: "dogecoin", symbol: "🐕 DOGE" },
+  { id: "@trx_price_tron", coin: "tron", symbol: "💎 TRX" },
+  { id: "@avax_pricee", coin: "avalanche-2", symbol: "🔺 AVAX" },
+  { id: "@dot_pricee", coin: "polkadot", symbol: "🔘 DOT" },
+  { id: "@link_pricee", coin: "chainlink", symbol: "🔗 LINK" },
+  { id: "@near_pricee", coin: "near", symbol: "Ⓝ NEAR" },
+  { id: "@matic_prices", coin: "matic-network", symbol: "🟣 MATIC" },
+  { id: "@litecoin_ltc_price", coin: "litecoin", symbol: "Ł LTC" },
+  { id: "@uniuniswap", coin: "uniswap", symbol: "🦄 UNI" },
+
+  // --- AKSIYALAR ---
+  { id: "@avtomess", coin: "apple-tokenized-stock-bittrex", symbol: "🍏 APPLE" },
+  { id: "@avtomess", coin: "tesla-tokenized-stock-bittrex", symbol: "⚡️ TESLA" },
+  { id: "@avtomess", coin: "nvidia-tokenized-stock-bittrex", symbol: "🎮 NVIDIA" },
+  { id: "@avtomess", coin: "amazon-tokenized-stock-bittrex", symbol: "📦 AMAZON" },
+  { id: "@avtomess", coin: "microsoft-tokenized-stock-bittrex", symbol: "💻 MSFT" },
+  { id: "@avtomess", coin: "google-tokenized-stock-bittrex", symbol: "🔍 GOOGLE" },
+  { id: "@avtomess", coin: "meta-platforms-tokenized-stock-bittrex", symbol: "♾️ META" },
+  { id: "@avtomess", coin: "netflix-tokenized-stock-bittrex", symbol: "🎬 NETFLIX" },
+  { id: "@avtomess", coin: "alibaba-tokenized-stock-bittrex", symbol: "🏮 ALIBABA" },
+  { id: "@avtomess", coin: "coinbase-global-tokenized-stock-bittrex", symbol: "🏦 COINBASE" },
+
+  // --- METALLAR ---
+  { id: "@avtomess", coin: "pax-gold", symbol: "🟡 OLTIN" },
+
+  // --- TON & MEMS ---
+  { id: "@avtomess", coin: "notcoin", symbol: "🔳 NOT" },
+  { id: "@avtomess", coin: "hamster-kombat", symbol: "🐹 HMSTR" },
+  { id: "@avtomess", coin: "dogs", symbol: "🦴 DOGS" },
+  { id: "@avtomess", coin: "pepe", symbol: "🐸 PEPE" },
+  { id: "@avtomess", coin: "shiba-inu", symbol: "🐕 SHIB" },
+  { id: "@avtomess", coin: "bonk", symbol: "🦴 BONK" },
+  { id: "@avtomess", coin: "floki", symbol: "⚔️ FLOKI" },
+  { id: "@avtomess", coin: "dogwifhat", symbol: "👒 WIF" },
+  { id: "@avtomess", coin: "catizen", symbol: "🐈 CATI" },
+
+  // --- L1 & L2 ---
+  { id: "@avtomess", coin: "aptos", symbol: "🪐 APT" },
+  { id: "@avtomess", coin: "sui", symbol: "💧 SUI" },
+  { id: "@avtomess", coin: "optimism", symbol: "🔴 OP" },
+  { id: "@avtomess", coin: "sei-network", symbol: "🚢 SEI" },
+  { id: "@avtomess", coin: "cosmos", symbol: "⚛️ ATOM" },
+];
+
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+async function sendPrices() {
+  try {
+    const chunkSize = 46;
+    for (let i = 0; i < CHANNELS_CONFIG.length; i += chunkSize) {
+      const chunk = CHANNELS_CONFIG.slice(i, i + chunkSize);
+      const coinIds = chunk.map(c => c.coin).join(',');
+      
+      let data = {};
+      try {
+        // 1-urinish: CoinGecko
+        const response = await axios.get(https://api.coingecko.com/api/v3/simple/price?ids=${coinIds}&vs_currencies=usd&include_24hr_change=true, { timeout: 10000 });
+        data = response.data;
+      } catch (e) {
+        console.log("⚠️ CoinGecko band, CoinCap-dan olinmoqda...");
+      }
+            for (const item of chunk) {
         try {
           let price, change;
           
@@ -35,47 +117,3 @@ for (const item of chunk) {
 // 1 daqiqada bir marta yangilash
 setInterval(sendPrices, 180000);
 sendPrices();
-// 6. VAQTNI HISOBLASH FUNKSIYASI
-function calculateRemaining(birthdayStr) {
-    const [d, m, y] = birthdayStr.split('.').map(Number);
-    const now = new Date();
-    
-    // Toshkent vaqti bilan solishtirish (UTC+5)
-    let nextBday = new Date(now.getFullYear(), m - 1, d);
-    
-    // Agar bu yilgi tug'ilgan kun o'tib ketgan bo'lsa, kelasi yilnikini olamiz
-    if (nextBday < now) {
-        nextBday.setFullYear(now.getFullYear() + 1);
-    }
-
-    const diff = nextBday - now;
-    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-    return { days };
-}
-
-// 7. HAR KUNI SOAT 09:00 DA AVTOMATIK XABAR (Cron Job)
-cron.schedule("0 9 * * *", () => {
-    console.log("Eslatmalar yuborish boshlandi...");
-    
-    for (const userId in users) {
-        const user = users[userId];
-        const info = calculateRemaining(user.date);
-        
-        let message = `🔔 Eslatma: Tug'ilgan kuningizga **${info.days} kun** qoldi!`;
-        
-        // Agar aynan bugun bo'lsa
-        if (info.days === 0 || info.days === 366) {
-            message = `🥳 BUGUN SIZNING TUG'ILGAN KUNINGIZ! \n\n${user.name}, tabriklaymiz! Umringiz uzoq bo'lsin! 🎂🎉`;
-        }
-
-        bot.api.sendMessage(user.chatId, message, { parse_mode: "Markdown" })
-            .catch(err => console.error(`Xabar ketmadi (${user.name}):`, err.message));
-    }
-}, {
-    timezone: "Asia/Tashkent"
-});
-
-// 8. BOTNI ISHGA TUSHIRISH
-bot.start({
-    onStart: () => console.log("🚀 Tug'ilgan kun boti muvaffaqiyatli ishga tushdi!")
-});
